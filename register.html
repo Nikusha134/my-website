@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="visual">
+    <div class="wrapper">
+    <header class="navbar">
+        <div class="logo">მთავარი გვერდი</div>
+    <nav class="nav-links">
+        <a href="index.html">მთავარი</a>
+        <a href="register.html">რეგისტრაცია</a>
+        <a href="services.html">სერვისი და მომსახურება</a>
+        <a href="about.html">ჩვენს შესახებ</a>
+    </nav>
+    </header>
+    <main class="glass2">
+
+        <h1>შეავსეთ რეგისტრაციის ფორმა</h1>
+      <form class="form" action="#" method="post">
+        <label for="fullname">სრული სახელი</label>
+        <input type="text" id="fullname" name="fullname" placeholder="Your Name" required />
+
+        <label for="email">ელ.ფოსტა</label>
+        <input type="email" id="email" name="email" placeholder="example@gmail.com" required />
+
+        <label for="password">პაროლი</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required />
+
+        <label for="confirm-password">გაიმეორეთ პაროლი</label>
+        <input type="password" id="confirm-password" name="confirm-password" placeholder="••••••••" required />
+
+        <button type="submit" class="btn">რეგისტრაცია</button>
+        <div id="g_id_onload"
+     data-client_id="545613067432-pmqaj75s9g87gomi6da2fka181am8hkq.apps.googleusercontent.com"
+     data-context="signup"
+     data-ux_mode="popup"
+     data-callback="handleCredentialResponse">
+</div>
+<div class="g_id_signin" data-type="standard"></div>
+
+      </form>
+    </main>
+    <footer>
+        <p>Website Powered By @NikoloziMayishvili</p>
+    </footer>
+    </div>
+
+    <script>
+  const form = document.querySelector('.form');
+
+  form.addEventListener('submit', (e) => {
+    const password = form['password'].value;
+    const confirmPassword = form['confirm-password'].value;
+    if (password !== confirmPassword) {
+      e.preventDefault();
+      alert('პაროლები არ ემთხვევა!');
+    }
+  });
+
+  function handleCredentialResponse(response) {
+    const jwt = response.credential;
+    const base64Url = jwt.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    const user = JSON.parse(jsonPayload);
+
+    alert(`მოგესალმებით, ${user.name}! თქვენი იმეილი: ${user.email}`);
+
+    // აქ შეგიძლია დაამატო გადამისამართება სერვისების გვერდზე:
+    // window.location.href = 'services.html';
+  }
+</script>
+
+    
+</body>
+</html>
