@@ -35,13 +35,42 @@
         <input type="password" id="confirm-password" name="confirm-password" placeholder="••••••••" required />
 
         <button type="submit" class="btn">რეგისტრაცია</button>
-        <div id="g_id_onload"
-     data-client_id="545613067432-pmqaj75s9g87gomi6da2fka181am8hkq.apps.googleusercontent.com"
-     data-context="signup"
-     data-ux_mode="popup"
-     data-callback="handleCredentialResponse">
-</div>
-<div class="g_id_signin" data-type="standard"></div>
+        
+<button id="googleSignIn" style="padding: 10px 20px; font-size: 18px;">🔒 Google-ით შესვლა</button>
+
+  <!-- Firebase SDK და სკრიპტი -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxBMrWfE5-2BIdeNFd_5OGI47YC9lm6_s",
+      authDomain: "nikusha-web.firebaseapp.com",
+      projectId: "nikusha-web",
+      storageBucket: "nikusha-web.appspot.com",
+      messagingSenderId: "262614394157",
+      appId: "1:262614394157:web:f9a6e9e7986d3bd8941fa4",
+      measurementId: "G-NGHNKSV255"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    document.getElementById("googleSignIn").addEventListener("click", () => {
+      signInWithPopup(auth, provider)
+        .then((result) => {
+          const user = result.user;
+          alert("მოგესალმებით, " + user.displayName + "!");
+          window.location.href = "services.html";
+        })
+        .catch((error) => {
+          alert("შეცდომა: " + error.message);
+          console.error(error);
+        });
+    });
+  </script>
+
 
       </form>
     </main>
@@ -50,34 +79,6 @@
     </footer>
     </div>
 
-    <script>
-  const form = document.querySelector('.form');
-
-  form.addEventListener('submit', (e) => {
-    const password = form['password'].value;
-    const confirmPassword = form['confirm-password'].value;
-    if (password !== confirmPassword) {
-      e.preventDefault();
-      alert('პაროლები არ ემთხვევა!');
-    }
-  });
-
-  function handleCredentialResponse(response) {
-    const jwt = response.credential;
-    const base64Url = jwt.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-
-    const user = JSON.parse(jsonPayload);
-
-    alert(`მოგესალმებით, ${user.name}! თქვენი იმეილი: ${user.email}`);
-
-    // აქ შეგიძლია დაამატო გადამისამართება სერვისების გვერდზე:
-    // window.location.href = 'services.html';
-  }
-</script>
 
     
 </body>
