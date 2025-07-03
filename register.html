@@ -1,47 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ka">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>რეგისტრაცია</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="visual">
-    <div class="wrapper">
+  <div class="wrapper">
     <header class="navbar">
-        <div class="logo">მთავარი გვერდი</div>
-    <nav class="nav-links">
+      <div class="logo">მთავარი გვერდი</div>
+      <nav class="nav-links">
         <a href="index.html">მთავარი</a>
         <a href="register.html">რეგისტრაცია</a>
         <a href="services.html">სერვისი და მომსახურება</a>
         <a href="about.html">ჩვენს შესახებ</a>
-    </nav>
+      </nav>
     </header>
-    <main class="glass2">
 
-        <h1>შეავსეთ რეგისტრაციის ფორმა</h1>
-      <form class="form" action="#" method="post">
+    <main class="glass2">
+      <h1>შეავსეთ რეგისტრაციის ფორმა</h1>
+
+      <form id="register-form" class="form" action="#" method="post">
         <label for="fullname">სრული სახელი</label>
-        <input type="text" id="fullname" name="fullname" placeholder="Your Name" required />
+        <input type="text" id="fullname" name="fullname" required />
 
         <label for="email">ელ.ფოსტა</label>
-        <input type="email" id="email" name="email" placeholder="example@gmail.com" required />
+        <input type="email" id="email" name="email" required />
 
         <label for="password">პაროლი</label>
-        <input type="password" id="password" name="password" placeholder="••••••••" required />
+        <input type="password" id="password" name="password" required />
 
         <label for="confirm-password">გაიმეორეთ პაროლი</label>
-        <input type="password" id="confirm-password" name="confirm-password" placeholder="••••••••" required />
+        <input type="password" id="confirm-password" name="confirm-password" required />
 
         <button type="submit" class="btn">რეგისტრაცია</button>
-        
-<button id="googleSignIn" style="padding: 10px 20px; font-size: 18px;">🔒 Google-ით შესვლა</button>
+      </form>
 
-  <!-- Firebase SDK და სკრიპტი -->
+      <div style="margin-top: 1rem; text-align: center;">
+        <button id="googleSignIn" class="btn">🔒 Google-ით შესვლა</button>
+      </div>
+    </main>
+
+    <footer>
+      <p>Website Powered By @NikoloziMayishvili</p>
+    </footer>
+  </div>
+
+  <!-- Firebase Auth სკრიპტი -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      GoogleAuthProvider,
+      signInWithPopup
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBxBMrWfE5-2BIdeNFd_5OGI47YC9lm6_s",
@@ -55,8 +70,32 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
 
+    // Email/Password რეგისტრაცია
+    const form = document.getElementById("register-form");
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = form["email"].value;
+      const password = form["password"].value;
+      const confirmPassword = form["confirm-password"].value;
+
+      if (password !== confirmPassword) {
+        alert("პაროლები არ ემთხვევა!");
+        return;
+      }
+
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          alert("რეგისტრაცია წარმატებით დასრულდა!");
+          window.location.href = "services.html";
+        })
+        .catch((error) => {
+          alert("შეცდომა: " + error.message);
+        });
+    });
+
+    // Google Sign-In
+    const provider = new GoogleAuthProvider();
     document.getElementById("googleSignIn").addEventListener("click", () => {
       signInWithPopup(auth, provider)
         .then((result) => {
@@ -66,20 +105,8 @@
         })
         .catch((error) => {
           alert("შეცდომა: " + error.message);
-          console.error(error);
         });
     });
   </script>
-
-
-      </form>
-    </main>
-    <footer>
-        <p>Website Powered By @NikoloziMayishvili</p>
-    </footer>
-    </div>
-
-
-    
 </body>
 </html>

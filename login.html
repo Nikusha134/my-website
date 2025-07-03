@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>შესვლა</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="visual">
+  <div class="wrapper">
+    <header class="navbar">
+      <div class="logo">შესვლა</div>
+      <nav class="nav-links">
+        <a href="index.html">მთავარი</a>
+        <a href="register.html">რეგისტრაცია</a>
+        <a href="login.html">შესვლა</a>
+      </nav>
+    </header>
+
+    <main class="glass2">
+      <h1>შესვლა</h1>
+      <form id="login-form" class="form">
+        <label for="email">ელფოსტა</label>
+        <input type="email" id="email" required />
+
+        <label for="password">პაროლი</label>
+        <input type="password" id="password" required />
+
+        <label>
+          <input type="checkbox" id="rememberMe" />
+          დამახსოვრება
+        </label>
+
+        <button type="submit" class="btn">შესვლა</button>
+      </form>
+    </main>
+
+    <footer>
+      <p>Website Powered by @NikoloziMayishvili</p>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      setPersistence,
+      browserLocalPersistence,
+      browserSessionPersistence,
+      signInWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxBMrWfE5-2BIdeNFd_5OGI47YC9lm6_s",
+      authDomain: "nikusha-web.firebaseapp.com",
+      projectId: "nikusha-web",
+      storageBucket: "nikusha-web.appspot.com",
+      messagingSenderId: "262614394157",
+      appId: "1:262614394157:web:f9a6e9e7986d3bd8941fa4",
+      measurementId: "G-NGHNKSV255"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const form = document.getElementById("login-form");
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const rememberMe = document.getElementById("rememberMe").checked;
+
+      const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+
+      setPersistence(auth, persistence)
+        .then(() => {
+          return signInWithEmailAndPassword(auth, email, password);
+        })
+        .then((userCredential) => {
+          alert("მოგესალმებით, წარმატებით შეხვდით სისტემაში!");
+          window.location.href = "services.html";
+        })
+        .catch((error) => {
+          alert("შეცდომა: " + error.message);
+        });
+    });
+  </script>
+</body>
+</html>
