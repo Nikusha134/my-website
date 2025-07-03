@@ -2,10 +2,9 @@
 <html lang="ka">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>რეგისტრაცია</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>რეგისტრაცია და შესვლა</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="visual">
   <div class="wrapper">
@@ -13,33 +12,53 @@
       <div class="logo">მთავარი გვერდი</div>
       <nav class="nav-links">
         <a href="index.html">მთავარი</a>
-        <a href="register.html">რეგისტრაცია</a>
+        <a href="register.html">რეგისტრაცია / შესვლა</a>
         <a href="services.html">სერვისი და მომსახურება</a>
         <a href="about.html">ჩვენს შესახებ</a>
       </nav>
     </header>
 
     <main class="glass2">
-      <h1>შეავსეთ რეგისტრაციის ფორმა</h1>
+      <h1>რეგისტრაცია / შესვლა</h1>
 
-      <form id="register-form" class="form" action="#" method="post">
-        <label for="fullname">სრული სახელი</label>
-        <input type="text" id="fullname" name="fullname" required />
+      <!-- ავტორიზებული მომხმარებლის ბლოკი -->
+      <div id="user-info" style="display:none; text-align:center; margin-bottom: 1rem;">
+        <p>გამარჯობა, <span id="user-name"></span>!</p>
+        <button id="logout-btn" class="btn">გასვლა</button>
+      </div>
 
-        <label for="email">ელ.ფოსტა</label>
-        <input type="email" id="email" name="email" required />
+      <!-- რეგისტრაცია + შესვლა -->
+      <div id="auth-forms">
+        <!-- რეგისტრაციის ფორმა -->
+        <form id="register-form" class="form" style="margin-bottom: 2rem;">
+          <h2>რეგისტრაცია</h2>
+          <label for="fullname">სრული სახელი</label>
+          <input type="text" id="fullname" name="fullname" required />
+          <label for="email-register">ელ.ფოსტა</label>
+          <input type="email" id="email-register" name="email" required />
+          <label for="password-register">პაროლი</label>
+          <input type="password" id="password-register" name="password" required />
+          <label for="confirm-password">გაიმეორეთ პაროლი</label>
+          <input type="password" id="confirm-password" name="confirm-password" required />
+          <button type="submit" class="btn">რეგისტრაცია</button>
+        </form>
 
-        <label for="password">პაროლი</label>
-        <input type="password" id="password" name="password" required />
+        <!-- შესვლის ფორმა -->
+        <form id="login-form" class="form" style="margin-bottom: 1rem;">
+          <h2>შესვლა</h2>
+          <label for="email-login">ელ.ფოსტა</label>
+          <input type="email" id="email-login" name="email" required />
+          <label for="password-login">პაროლი</label>
+          <input type="password" id="password-login" name="password" required />
+          <button type="submit" class="btn">შესვლა</button>
+        </form>
 
-        <label for="confirm-password">გაიმეორეთ პაროლი</label>
-        <input type="password" id="confirm-password" name="confirm-password" required />
-
-        <button type="submit" class="btn">რეგისტრაცია</button>
-      </form>
-
-      <div style="margin-top: 1rem; text-align: center;">
-        <button id="googleSignIn" class="btn">🔒 Google-ით შესვლა</button>
+        <!-- Google Sign-In -->
+        <div style="text-align: center;">
+          <button id="googleSignIn" class="btn" style="background-color:#4285F4; color:white;">
+            🔒 Google-ით შესვლა
+          </button>
+        </div>
       </div>
     </main>
 
@@ -48,14 +67,19 @@
     </footer>
   </div>
 
-  <!-- Firebase Auth სკრიპტი -->
+  <!-- Firebase + ავტორიზაციის სკრიპტი -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
       getAuth,
       createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
       GoogleAuthProvider,
-      signInWithPopup
+      signInWithPopup,
+      onAuthStateChanged,
+      signOut,
+      setPersistence,
+      browserLocalPersistence
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
@@ -71,13 +95,23 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // Email/Password რეგისტრაცია
-    const form = document.getElementById("register-form");
-    form.addEventListener("submit", (e) => {
+    // პერმანენტული შესვლა
+    setPersistence(auth, browserLocalPersistence).catch(console.error);
+
+    const registerForm = document.getElementById("register-form");
+    const loginForm = document.getElementById("login-form");
+    const authForms = document.getElementById("auth-forms");
+    const userInfo = document.getElementById("user-info");
+    const userNameSpan = document.getElementById("user-name");
+    const logoutBtn = document.getElementById("logout-btn");
+    const googleSignInBtn = document.getElementById("googleSignIn");
+
+    // რეგისტრაცია
+    registerForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      const email = form["email"].value;
-      const password = form["password"].value;
-      const confirmPassword = form["confirm-password"].value;
+      const email = document.getElementById("email-register").value.trim();
+      const password = document.getElementById("password-register").value;
+      const confirmPassword = document.getElementById("confirm-password").value;
 
       if (password !== confirmPassword) {
         alert("პაროლები არ ემთხვევა!");
@@ -85,9 +119,29 @@
       }
 
       createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          alert("რეგისტრაცია წარმატებით დასრულდა!");
-          window.location.href = "services.html";
+        .then(() => {
+          alert("რეგისტრაცია დასრულდა!");
+          registerForm.reset();
+        })
+        .catch((error) => {
+          if (error.code === "auth/email-already-in-use") {
+            alert("ეს ელფოსტა უკვე გამოყენებულია. სცადეთ შესვლა.");
+          } else {
+            alert("შეცდომა: " + error.message);
+          }
+        });
+    });
+
+    // შესვლა
+    loginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email-login").value.trim();
+      const password = document.getElementById("password-login").value;
+
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          alert("შესვლა წარმატებულია!");
+          loginForm.reset();
         })
         .catch((error) => {
           alert("შეცდომა: " + error.message);
@@ -95,17 +149,41 @@
     });
 
     // Google Sign-In
-    const provider = new GoogleAuthProvider();
-    document.getElementById("googleSignIn").addEventListener("click", () => {
+    googleSignInBtn.addEventListener("click", () => {
+      const provider = new GoogleAuthProvider();
       signInWithPopup(auth, provider)
         .then((result) => {
           const user = result.user;
-          alert("მოგესალმებით, " + user.displayName + "!");
-          window.location.href = "services.html";
+          alert("მოგესალმებით, " + (user.displayName || user.email));
         })
         .catch((error) => {
-          alert("შეცდომა: " + error.message);
+          alert("Google Sign-In შეცდომა: " + error.message);
         });
+    });
+
+    // მომხმარებლის შემოწმება
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userNameSpan.textContent = user.displayName || user.email;
+        authForms.style.display = "none";
+        userInfo.style.display = "block";
+
+        // გადამისამართება services.html-ზე
+        setTimeout(() => {
+          window.location.href = "services.html";
+        }, 3000);
+      } else {
+        authForms.style.display = "block";
+        userInfo.style.display = "none";
+      }
+    });
+
+    // გასვლა
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth).then(() => {
+        alert("გამოსვლა შესრულდა.");
+        location.reload();
+      });
     });
   </script>
 </body>
