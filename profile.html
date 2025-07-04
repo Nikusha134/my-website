@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ჩემი პროფილი</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="visual">
+  <div class="wrapper">
+    <header class="navbar">
+      <div class="logo">მთავარი გვერდი</div>
+      <nav class="nav-links">
+        <a href="index.html">საწყის გვერდზე დაბრუნება</a>
+      </nav>
+    </header>
+
+    <main class="glass2" style="max-width: 500px; margin: 2rem auto;">
+      <h1 style="text-align:center;">ჩემი პროფილი</h1>
+
+      <div class="profile-photo">
+        <img id="user-photo" src="default-avatar.png" alt="" />
+        <label for="photo-upload" class="custom-file-upload">ფოტოს ატვირთვა</label>
+        <input type="file" id="photo-upload" style="display:none" />
+      </div>
+
+      <div class="user-info">
+        <p><strong>მომხმარებელი:</strong> <span id="username">ჩატვირთვა...</span></p>
+        <p><strong>ელფოსტა:</strong> <span id="useremail">...</span></p>
+      </div>
+
+      <form id="change-password-form" class="form">
+        <h2 style="margin-top:2rem;">🔐 პაროლის შეცვლა</h2>
+        <input type="password" id="new-password" placeholder="ახალი პაროლი" required />
+        <button type="submit" class="btn">შეცვლა</button>
+      </form>
+
+      <button id="logout-btn" class="btn" style="margin-top: 2rem; width: 100%;">🚪 გასვლა</button>
+    </main>
+
+    <footer>
+      <p>Website Powered By @NikoloziMayishvili</p>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut,
+      updatePassword
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getStorage,
+      ref,
+      uploadBytes,
+      getDownloadURL
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxBMrWfE5-2BIdeNFd_5OGI47YC9lm6_s",
+      authDomain: "nikusha-web.firebaseapp.com",
+      projectId: "nikusha-web",
+      storageBucket: "nikusha-web.appspot.com",
+      messagingSenderId: "262614394157",
+      appId: "1:262614394157:web:f9a6e9e7986d3bd8941fa4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const storage = getStorage(app);
+
+    const usernameEl = document.getElementById("username");
+    const useremailEl = document.getElementById("useremail");
+    const logoutBtn = document.getElementById("logout-btn");
+    const passwordForm = document.getElementById("change-password-form");
+    const photoUpload = document.getElementById("photo-upload");
+    const userPhoto = document.getElementById("user-photo");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        let username = user.displayName;
+        if (!username) {
+          username = user.email ? user.email.split('@')[0] : "მომხმარებელი";
+        }
+        usernameEl.textContent = username;
+        useremailEl.textContent = user.email;
+
+        const photoRef = ref(storage, `profile_photos/${user.uid}`);
+        try {
+          const url = await getDownloadURL(photoRef);
+          userPhoto.src = url;
+        } catch (error) {
+          console.log("ფოტო არ მოიძებნა", error);
+        }
+      } else {
+        window.location.href = "register.html";
+      }
+    });
+
+    passwordForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const newPassword = document.getElementById("new-password").value;
+      const user = auth.currentUser;
+      try {
+        await updatePassword(user, newPassword);
+        alert("პაროლი წარმატებით შეიცვალა");
+        passwordForm.reset();
+      } catch (err) {
+        alert("შეცდომა: " + err.message);
+      }
+    });
+
+    photoUpload.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const user = auth.currentUser;
+      const photoRef = ref(storage, `profile_photos/${user.uid}`);
+      try {
+        await uploadBytes(photoRef, file);
+        const url = await getDownloadURL(photoRef);
+        userPhoto.src = url;
+        alert("ფოტო აიტვირთა!");
+      } catch (err) {
+        alert("შეცდომა: " + err.message);
+      }
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth).then(() => {
+        window.location.href = "register.html";
+      }).catch((error) => {
+        alert("გამოსვლის შეცდომა: " + error.message);
+      });
+    });
+  </script>
+</body>
+</html>

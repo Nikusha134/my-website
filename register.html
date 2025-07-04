@@ -9,12 +9,13 @@
 <body class="visual">
   <div class="wrapper">
     <header class="navbar">
-      <div class="logo">მთავარი გვერდი</div>
+      <div class="logo">რეგისტრაცია</div>
       <nav class="nav-links">
         <a href="index.html">მთავარი</a>
         <a href="register.html">რეგისტრაცია / შესვლა</a>
         <a href="services.html">სერვისი და მომსახურება</a>
         <a href="about.html">ჩვენს შესახებ</a>
+        <a href="profile.html" id="profile-link" style="display: none;">პროფილი</a>
       </nav>
     </header>
 
@@ -51,10 +52,19 @@
           <label for="password-login">პაროლი</label>
           <input type="password" id="password-login" name="password" required />
           <button type="submit" class="btn">შესვლა</button>
+          <!-- Forgot Password -->
+          <a href="#" id="show-forgot-password" style="display: inline-block; margin-top: 10px;">პაროლის აღდგენა</a>
+
+          <div id="forgot-password-container" style="display:none; margin-top: 10px;">
+            <h3>პაროლის აღდგენა</h3>
+            <input type="email" id="reset-email" placeholder="შეიყვანეთ თქვენი ელ.ფოსტა" />
+            <button id="reset-password-btn" class="btn" style="margin-top: 5px;">ლინკის გაგზავნა</button>
+            <p id="reset-message" style="margin-top: 5px;"></p>
+          </div>
         </form>
 
         <!-- Google Sign-In -->
-        <div style="text-align: center;">
+        <div style="text-align: center; margin-top: 20px;">
           <button id="googleSignIn" class="btn" style="background-color:#4285F4; color:white;">
             🔒 Google-ით შესვლა
           </button>
@@ -67,7 +77,6 @@
     </footer>
   </div>
 
-  <!-- Firebase + ავტორიზაციის სკრიპტი -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
@@ -79,7 +88,9 @@
       onAuthStateChanged,
       signOut,
       setPersistence,
-      browserLocalPersistence
+      browserLocalPersistence,
+      updateProfile,
+      sendPasswordResetEmail
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     const firebaseConfig = {
@@ -106,59 +117,67 @@
     const logoutBtn = document.getElementById("logout-btn");
     const googleSignInBtn = document.getElementById("googleSignIn");
 
+    const showForgotPasswordLink = document.getElementById("show-forgot-password");
+    const forgotPasswordContainer = document.getElementById("forgot-password-container");
+    const resetEmailInput = document.getElementById("reset-email");
+    const resetPasswordBtn = document.getElementById("reset-password-btn");
+    const resetMessage = document.getElementById("reset-message");
+
     // რეგისტრაცია
-    registerForm.addEventListener("submit", (e) => {
+    registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email-register").value.trim();
       const password = document.getElementById("password-register").value;
       const confirmPassword = document.getElementById("confirm-password").value;
+      const fullname = document.getElementById("fullname").value.trim();
 
       if (password !== confirmPassword) {
         alert("პაროლები არ ემთხვევა!");
         return;
       }
 
-      createUserWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          alert("რეგისტრაცია დასრულდა!");
-          registerForm.reset();
-        })
-        .catch((error) => {
-          if (error.code === "auth/email-already-in-use") {
-            alert("ეს ელფოსტა უკვე გამოყენებულია. სცადეთ შესვლა.");
-          } else {
-            alert("შეცდომა: " + error.message);
-          }
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // fullname-ს შენახვა
+        await updateProfile(userCredential.user, {
+          displayName: fullname
         });
+        alert("რეგისტრაცია დასრულდა!");
+        registerForm.reset();
+      } catch (error) {
+        if (error.code === "auth/email-already-in-use") {
+          alert("ეს ელფოსტა უკვე გამოყენებულია. სცადეთ შესვლა.");
+        } else {
+          alert("შეცდომა: " + error.message);
+        }
+      }
     });
 
     // შესვლა
-    loginForm.addEventListener("submit", (e) => {
+    loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email-login").value.trim();
       const password = document.getElementById("password-login").value;
 
-      signInWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          alert("შესვლა წარმატებულია!");
-          loginForm.reset();
-        })
-        .catch((error) => {
-          alert("შეცდომა: " + error.message);
-        });
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        alert("შესვლა წარმატებულია!");
+        loginForm.reset();
+      } catch (error) {
+        alert("შეცდომა: " + error.message);
+      }
     });
 
     // Google Sign-In
-    googleSignInBtn.addEventListener("click", () => {
+    googleSignInBtn.addEventListener("click", async () => {
       const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider)
-        .then((result) => {
-          const user = result.user;
-          alert("მოგესალმებით, " + (user.displayName || user.email));
-        })
-        .catch((error) => {
-          alert("Google Sign-In შეცდომა: " + error.message);
-        });
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        alert("მოგესალმებით, " + (user.displayName || user.email));
+      } catch (error) {
+        alert("Google Sign-In შეცდომა: " + error.message);
+      }
     });
 
     // მომხმარებლის შემოწმება
@@ -168,10 +187,11 @@
         authForms.style.display = "none";
         userInfo.style.display = "block";
 
-        // გადამისამართება services.html-ზე
-        setTimeout(() => {
+        // თუ გინდა გადამისამართება
+         setTimeout(() => {
           window.location.href = "services.html";
-        }, 3000);
+         }, 3000);
+
       } else {
         authForms.style.display = "block";
         userInfo.style.display = "none";
@@ -179,12 +199,41 @@
     });
 
     // გასვლა
-    logoutBtn.addEventListener("click", () => {
-      signOut(auth).then(() => {
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
         alert("გამოსვლა შესრულდა.");
         location.reload();
-      });
+      } catch (error) {
+        alert("შეცდომა გასვლისას: " + error.message);
+      }
     });
+
+    // პაროლის აღდგენის ლინკის ჩვენება/დამალვა
+    showForgotPasswordLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      forgotPasswordContainer.style.display = forgotPasswordContainer.style.display === "block" ? "none" : "block";
+      resetMessage.textContent = "";
+    });
+
+    // პაროლის აღდგენის ლინკის გაგზავნა
+    resetPasswordBtn.addEventListener("click", async () => {
+      const email = resetEmailInput.value.trim();
+      resetMessage.textContent = "";
+      if (!email) {
+        alert("გთხოვთ, შეიყვანეთ ელ.ფოსტა.");
+        return;
+      }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        resetMessage.style.color = "green";
+        resetMessage.textContent = "პაროლის აღდგენის ლინკი გაგზავნილია ელ-ფოსტაზე.";
+      } catch (error) {
+        resetMessage.style.color = "red";
+        resetMessage.textContent = "შეცდომა: " + error.message;
+      }
+    });
+
   </script>
 </body>
 </html>
